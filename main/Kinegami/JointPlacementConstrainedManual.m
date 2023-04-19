@@ -1,8 +1,8 @@
-function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod, fingertip, plotoption)
-% JOINTPLACEMENTA - This algorithm identifies the joint location
-% iteratively such that the new joint location is always 4r apart from all
-% the previous joints. This algorithm shows the existence of
-% Dubins-specified links.
+function [TransformStruct] = JointPlacementConstrainedManual(D, r, n, ...
+    JointStruct, N, theta_mod, z_mod, fingertip, plotoption)
+% JOINTPLACEMENTCONSTRAINEDMANUAL - This algorithm constructs the joint
+% locations given the D-H parameters and the positions and orientations
+% along the z axes (the degrees of freedom in the DH specifications)
 
 % Inputs:
 %   D               - the D-H parameter table of values: i x [a, alpha, d,
@@ -15,6 +15,7 @@ function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod,
 %                     of joints of system) - 1.
 %   theta_mod       - revolute joint parameter for use within
 %                     RotationalMatrix.m.
+%   z_mod           - joint translation along its z axis.
 %   fingertip       - string input ('x', 'y', or 'z') used for fingertip
 %                     orientation assignment.
 %   plotoption      - string input which dicates plotting.
@@ -26,11 +27,12 @@ function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod,
 %                     related information.
 
 % Authors: 
+% Daniel Feshbach <feshbach@seas.upenn.edu>
 % Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last Edited 1/25/2023
+% Last Edited 4/13/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -161,17 +163,10 @@ for i = 1:N+1
     % Plot vectors which demonstrate the axis along which each sphere is
     % restricted to move
     if strcmp(plotoption, 'on') == 1
-        z_scale = 10;
-
         quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
-            TransformStruct(i).oi(3), z_scale*TransformStruct(i).zaxis(1), ...
-            z_scale*TransformStruct(i).zaxis(2), z_scale*TransformStruct(i).zaxis(3), ...
+            TransformStruct(i).oi(3), TransformStruct(i).zaxis(1), ...
+            TransformStruct(i).zaxis(2), TransformStruct(i).zaxis(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 0.8*colorvector(i, :));
-
-        % quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
-        %     TransformStruct(i).oi(3), -z_scale*TransformStruct(i).zaxis(1), ...
-        %     -z_scale*TransformStruct(i).zaxis(2), -z_scale*TransformStruct(i).zaxis(3), ...
-        %     'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 0.8*colorvector(i, :));
 
         quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
             TransformStruct(i).oi(3), TransformStruct(i).xaxis(1), ...
@@ -191,29 +186,11 @@ if strcmp(plotoption, 'on') == 1
     hold on
 end
 
-[TransformStruct(N+1).demo] = SphericalSampling(TransformStruct(N+1).oi, ...
-    TransformStruct(N+1).rs, 'none', plotoption);
-
-% Concatenate to express array of spheres
-TransformStruct(N+1).democumul = TransformStruct(N+1).demo;
-
-% Find new sphere center and store to index-1.optimized
-[R, C, Xb] = ExactMinBoundSphere3D(TransformStruct(N+1).democumul);
-
-TransformStruct(N+1).Xb = Xb;
-TransformStruct(N+1).oinew = C;
-TransformStruct(N+1).rnew = R;
-
-% Output new plot of cumulative sphere
-[TransformStruct(N+1).democumul] = SphericalSampling(TransformStruct(N+1).oinew, ...
-    TransformStruct(N+1).rnew, 'none', plotoption);
-
-TransformStruct(N+1).oilarge = TransformStruct(N+1).oi;
-TransformStruct(N+1).delta_z = 0;
-
-% Loop through sphere bounding and minimization (Fun!)
-for i = (N+1):-1:2 
-   [TransformStruct] = SphereMinimization(TransformStruct, i, r, 'none', plotoption);  
+% Loop through to set each joint location to the specified zposition
+for i = 1:N+1
+    zhat = TransformStruct(i).zaxis;
+    origin = TransformStruct(i).oi;
+    TransformStruct(i).oinew = origin + z_mod(i) * zhat;
 end
 
 % Final sphere ("joint") visualization
@@ -235,7 +212,6 @@ for i = 1:N+1
 %         'AutoScaleFactor', 1, 'Linewidth', 1)
     
     % Plot final new sphere locations
-    i
     [TransformStruct(i).demonew] = SphericalSampling(TransformStruct(i).oinew, ...
         TransformStruct(i).rs, colorvector(i, :), plotoption); 
     
@@ -243,12 +219,12 @@ for i = 1:N+1
     % Plot vectors which demonstrate the axis along which each sphere is
     % restricted to move
     if strcmp(plotoption, 'on') == 1
-        
+
         % The z axes of the original joint origins, for reference
         quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
             TransformStruct(i).oi(3), TransformStruct(i).zaxis(1), ...
             TransformStruct(i).zaxis(2), TransformStruct(i).zaxis(3), ...
-            'AutoScaleFactor', 0.05, 'Linewidth', 3, 'Color', 0.8*colorvector(i, :));        
+            'AutoScaleFactor', 0.05, 'Linewidth', 3, 'Color', 0.8*colorvector(i, :));   
         
         quiver3(TransformStruct(i).oinew(1), TransformStruct(i).oinew(2), ...
             TransformStruct(i).oinew(3), TransformStruct(i).zaxis(1), ...

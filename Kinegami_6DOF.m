@@ -22,7 +22,9 @@ addpath(genpath(fileparts(mfilename('fullpath'))));
 % For the general method, use JointPlacementA.m ('placementA'); 
 % To guarantee no self-intersection, use JointPlacementB.m ('placementB');
 % To locate the joints manually, use SelfAssign.m ('selfassign')
-jointselect = 'selfassign';
+% To manually specify only the free DOFs, use
+% JointPlacementConstrainedManual.m ('constrainedManual')
+jointselect = 'placementA';
 
 % Determines whether the user wishes their elbow fittings to have visible
 % tucks ('on' - recommended) or appear with only the lower outlines ('off')
@@ -45,7 +47,7 @@ segmentation = 'off';
 % Specify whether intermediary plots should be run ('on'/'off'). 'off' is
 % recommended for faster computational time, 'on' is recommended for more
 % in-depth analysis.
-plotoption = 'off';
+plotoption = 'on';
 
 % Specify whether initial tube plotting (prior to first joint location)
 % should be included. ('on'/'off')
@@ -92,6 +94,13 @@ Q0 = D(:,end)';
 theta_mod = [0, 0, pi/2, pi/2, 0, 0, 0];
 % theta_mod = [0, 0, 0, 0, 0, 0, 0];
 
+% For constrainedManual: specify the z-axis modifications
+% (placementA and placementB choose these values automatically, 
+% and selfassign manually assigns the whole frame.)
+% z_mod = [0, .1, -.1, .1, 0, .1, 0];
+% solution from placementA:
+z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517         0];
+
 % Layer of recursive sink gadget for revolute joint (row vec.)
 Nz = [1, 1, 1, 1, 1, 1, 1];
 
@@ -110,6 +119,7 @@ N = size(JointStruct, 2) - 1;
 TransformStruct(N+1) = struct();
  
 %% SELF-ASSIGNED JOINT LOCATION
+
 
 % If the selfassign tag is applied, provide Oc for each joint
 if strcmp(jointselect, 'selfassign') == 1
@@ -145,6 +155,7 @@ if strcmp(jointselect, 'selfassign') == 1
     TransformStruct(7).Oc = [1, 0, 0, a3+8*r; ...
                              0, 1, 0, 0; ...
                              0, 0, 1, 8*r-d4];
+
 else  
     % Otherwise, do nothing new
 end
@@ -153,5 +164,16 @@ end
 
 % Run Kinegami code
 [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, nsides, JointStruct, ...
-    elbow_tuck, triple, theta_mod, fingertip, TransformStruct, ...
+    elbow_tuck, triple, theta_mod, z_mod, fingertip, TransformStruct, ...
     DXF, split, segmentation, plotoption, jointselect, tubeinit);
+
+% Display the z_mod calculated by placementA
+if strcmp(jointselect, 'placementA') == 1
+    z_mod(N+1) = 0;
+    for i = 1:N
+        z_mod(i) = TransformStruct(i).delta_z;
+    end
+    disp("Solution found by placementA:")
+    disp(['z_mod = [' num2str(z_mod) ']']) ;
+end
+

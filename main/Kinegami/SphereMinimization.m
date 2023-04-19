@@ -23,9 +23,10 @@ function [DataStruct] = SphereMinimization(DataStruct, index, r, colorinput, plo
 
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
-% Last Edited 6/24/2021
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last Edited 4/18/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -73,6 +74,10 @@ delta_opt = fmincon(obj, delta0, A, B, Aeq, Beq, LB, UB, nonlincon);
 
 % Given delta_opt, determine new value for DataStruct(index-1).oinew
 DataStruct(index-1).oinew = DataStruct(index-1).oi + zzz*delta_opt;
+
+% Store the solution displacement along joint z axis:
+% negative sign because zzz is defined as -DataStruct(index-1).zaxis;
+DataStruct(index-1).delta_z = -delta_opt; 
 
 % hold on
 % quiver3(DataStruct(index-1).oinew(1), DataStruct(index-1).oinew(2), ...

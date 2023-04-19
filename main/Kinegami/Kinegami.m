@@ -1,5 +1,5 @@
 function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n, ...
-    JointStruct, mirror, triple, theta_mod, fingertip, ...
+    JointStruct, mirror, triple, theta_mod, z_mod, fingertip, ...
     TransformStruct, DXF, split, segmentation, plotoption, jointselect, ...
     tubeinit)
 % KINEGAMI - Generates a crease pattern that folds into a serial mechanism
@@ -18,6 +18,8 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
 %                     duplication takes place.
 %   theta_mod       - revolute joint parameter for use within
 %                     RotationalMatrix.m.
+%   z_mod           - joint translation along its z axis, for use in
+%                     JointPlacementConstrainedManual.m
 %   fingertip       - string input ('x', 'y', or 'z') used for fingertip
 %                     orientation assignment.
 %   TransformStruct - data structure which contains information about
@@ -46,9 +48,10 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
 
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
-% Last Edited 1/25/2023
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last Edited 4/13/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -79,21 +82,23 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
         % Run if Joint Assignment has been pre-assigned
         [TransformStruct] = SelfAssign(TransformStruct, r, n, JointStruct, N, plotoption); 
         
-    else
-        
-        if strcmp(jointselect, 'placementB') == 1
+    elseif strcmp(jointselect, 'placementB') == 1
+
+        % Joint Placement and Planar Analysis
+        [TransformStruct, JointStruct, N] = JointPlacementB(D, r, n, ...
+            JointStruct, N, theta_mod, fingertip, plotoption);
             
-            % Joint Placement and Planar Analysis
-            [TransformStruct, JointStruct, N] = JointPlacementB(D, r, n, ...
-                JointStruct, N, theta_mod, fingertip, plotoption);
-            
-        elseif strcmp(jointselect, 'placementA') == 1
+    elseif strcmp(jointselect, 'placementA') == 1
     
-            % Joint Assignment and Sphere Analysis for DH specs
-            [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, ...
-                theta_mod, fingertip, plotoption);
-            
-        end
+        % Joint Assignment and Sphere Analysis for DH specs
+        [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, ...
+            theta_mod, fingertip, plotoption);
+
+    elseif strcmp(jointselect, 'constrainedManual') == 1
+    
+        % 
+        [TransformStruct] = JointPlacementConstrainedManual(D, r, n, ...
+            JointStruct, N, theta_mod, z_mod, fingertip, plotoption);
         
     end
     

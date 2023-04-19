@@ -23,7 +23,9 @@ addpath(genpath(fileparts(mfilename('fullpath'))));
 % For the general method, use JointPlacementA.m ('placementA'); 
 % To guarantee no self-intersection, use JointPlacementB.m ('placementB');
 % To locate the joints manually, use SelfAssign.m ('selfassign')
-jointselect = 'placementB';
+% To manually specify only the free DOFs, use
+% JointPlacementConstrainedManual.m ('constrainedManual')
+jointselect = 'constrainedManual';
 
 % Determines whether the user wishes their elbow fittings to have visible
 % tucks ('on' - recommended) or appear with only the lower outlines ('off')
@@ -86,6 +88,13 @@ Q0 = [ pi/2, 0, 0];
 
 % Specify the angle modification utilized (recommended: zeros(n)) (row vec.)
 theta_mod = [ 0, 0, 0]; 
+
+% For constrainedManual: specify the z-axis modifications
+% (placementA and placementB choose these values automatically, 
+% and selfassign manually assigns the whole frame.)
+% z_mod = [0, 0, 0];
+% solution from placementA:
+z_mod = [-0.18272  3.4961e-09           0];
 
 % Layer of recursive sink gadget for revolute joint (row vec.)
 Nz = [ 1, 1, 1]; 
@@ -155,5 +164,15 @@ end
 
 % Run Kinegami code
 [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, nsides, JointStruct, ...
-    elbow_tuck, triple, theta_mod, fingertip, TransformStruct, ...
+    elbow_tuck, triple, theta_mod, z_mod, fingertip, TransformStruct, ...
     DXF, split, segmentation, plotoption, jointselect, tubeinit);
+
+% Display the z_mod calculated by placementA
+if strcmp(jointselect, 'placementA') == 1
+    z_mod(N+1) = 0;
+    for i = 1:N
+        z_mod(i) = TransformStruct(i).delta_z;
+    end
+    disp("Solution found by placementA:")
+    disp(['z_mod = [' num2str(z_mod) ']']) ;
+end
