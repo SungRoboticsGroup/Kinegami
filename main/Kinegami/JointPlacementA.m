@@ -1,4 +1,4 @@
-function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod, fingertip, plotoption)
+function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod, z_mod, fingertip, plotoption)
 % JOINTPLACEMENTA - This algorithm identifies the joint location
 % iteratively such that the new joint location is always 4r apart from all
 % the previous joints. This algorithm shows the existence of
@@ -191,7 +191,17 @@ if strcmp(plotoption, 'on') == 1
     hold on
 end
 
-[TransformStruct(N+1).demo] = SphericalSampling(TransformStruct(N+1).oi, ...
+for i=1:N+1
+    TransformStruct(i).delta_z = z_mod(i);
+end
+
+if isnan(TransformStruct(N+1).delta_z)
+    TransformStruct(N+1).delta_z = 0;
+end
+TransformStruct(N+1).oinew = TransformStruct(N+1).oi + ...
+    TransformStruct(N+1).delta_z * TransformStruct(N+1).zaxis;
+
+[TransformStruct(N+1).demo] = SphericalSampling(TransformStruct(N+1).oinew, ...
     TransformStruct(N+1).rs, 'none', plotoption);
 
 % Concatenate to express array of spheres
@@ -209,7 +219,6 @@ TransformStruct(N+1).rnew = R;
     TransformStruct(N+1).rnew, 'none', plotoption);
 
 TransformStruct(N+1).oilarge = TransformStruct(N+1).oi;
-TransformStruct(N+1).delta_z = 0;
 
 % Loop through sphere bounding and minimization (Fun!)
 for i = (N+1):-1:2 

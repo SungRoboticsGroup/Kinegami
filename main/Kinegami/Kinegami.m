@@ -18,8 +18,8 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
 %                     duplication takes place.
 %   theta_mod       - revolute joint parameter for use within
 %                     RotationalMatrix.m.
-%   z_mod           - joint translation along its z axis, for use in
-%                     JointPlacementConstrainedManual.m
+%   z_mod           - joint position along its z axis (if NaNs, to be
+%                     chosen by joint placement algorithm)
 %   fingertip       - string input ('x', 'y', or 'z') used for fingertip
 %                     orientation assignment.
 %   TransformStruct - data structure which contains information about
@@ -92,7 +92,7 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
     
         % Joint Assignment and Sphere Analysis for DH specs
         [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, ...
-            theta_mod, fingertip, plotoption);
+            theta_mod, z_mod, fingertip, plotoption);
 
     elseif strcmp(jointselect, 'constrainedManual') == 1
     

@@ -60,17 +60,22 @@ delta0 = 1;
         ceq = [];
     end
 
-% Express other parameters as empty cells (not used)
-A = [];
-B = [];
-Aeq = [];
-Beq = [];
-LB = [];
-UB = [];
-nonlincon = @nlcon;
 
-% Output optimal value for delta
-delta_opt = fmincon(obj, delta0, A, B, Aeq, Beq, LB, UB, nonlincon);
+if isnan(DataStruct(index-1).delta_z)   
+    % Express other parameters as empty cells (not used)
+    A = [];
+    B = [];
+    Aeq = [];
+    Beq = [];
+    LB = [];
+    UB = [];
+    nonlincon = @nlcon;
+    
+    % Output optimal value for delta
+    delta_opt = fmincon(obj, delta0, A, B, Aeq, Beq, LB, UB, nonlincon);
+    
+    DataStruct(index-1).delta_z = -delta_opt;
+end
 
 % Given delta_opt, determine new value for DataStruct(index-1).oinew
 DataStruct(index-1).oinew = DataStruct(index-1).oi + zzz*delta_opt;

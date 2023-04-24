@@ -47,7 +47,7 @@ segmentation = 'off';
 % Specify whether intermediary plots should be run ('on'/'off'). 'off' is
 % recommended for faster computational time, 'on' is recommended for more
 % in-depth analysis.
-plotoption = 'on';
+plotoption = 'off';
 
 % Specify whether initial tube plotting (prior to first joint location)
 % should be included. ('on'/'off')
@@ -94,12 +94,15 @@ Q0 = D(:,end)';
 theta_mod = [0, 0, pi/2, pi/2, 0, 0, 0];
 % theta_mod = [0, 0, 0, 0, 0, 0, 0];
 
-% For constrainedManual: specify the z-axis modifications
-% (placementA and placementB choose these values automatically, 
-% and selfassign manually assigns the whole frame.)
-% z_mod = [0, .1, -.1, .1, 0, .1, 0];
+% Specify the z-axis modifications
+% To leave the z-axis placement up to the algorithm, use NaN
+% z_mod = [0   0   0   0   0   0   0];
+z_mod = [NaN   NaN   NaN   NaN   NaN   NaN   NaN];
 % solution from placementA:
-z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517         0];
+% z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
+
+
+
 
 % Layer of recursive sink gadget for revolute joint (row vec.)
 Nz = [1, 1, 1, 1, 1, 1, 1];
@@ -117,7 +120,7 @@ for i = 1:n
 end
 N = size(JointStruct, 2) - 1;
 TransformStruct(N+1) = struct();
- 
+
 %% SELF-ASSIGNED JOINT LOCATION
 
 
@@ -169,8 +172,8 @@ end
 
 % Display the z_mod calculated by placementA
 if strcmp(jointselect, 'placementA') == 1
-    z_mod(N+1) = 0;
-    for i = 1:N
+    z_mod(N) = 0;
+    for i = 1:N+1
         z_mod(i) = TransformStruct(i).delta_z;
     end
     disp("Solution found by placementA:")
