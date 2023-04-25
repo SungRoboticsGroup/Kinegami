@@ -93,12 +93,6 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
         % Joint Assignment and Sphere Analysis for DH specs
         [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, ...
             theta_mod, z_mod, fingertip, plotoption);
-
-    elseif strcmp(jointselect, 'constrainedManual') == 1
-    
-        % 
-        [TransformStruct] = JointPlacementConstrainedManual(D, r, n, ...
-            JointStruct, N, theta_mod, z_mod, fingertip, plotoption);
         
     end
     

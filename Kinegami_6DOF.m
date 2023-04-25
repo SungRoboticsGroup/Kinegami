@@ -22,8 +22,6 @@ addpath(genpath(fileparts(mfilename('fullpath'))));
 % For the general method, use JointPlacementA.m ('placementA'); 
 % To guarantee no self-intersection, use JointPlacementB.m ('placementB');
 % To locate the joints manually, use SelfAssign.m ('selfassign')
-% To manually specify only the free DOFs, use
-% JointPlacementConstrainedManual.m ('constrainedManual')
 jointselect = 'placementA';
 
 % Determines whether the user wishes their elbow fittings to have visible
@@ -98,8 +96,9 @@ theta_mod = [0, 0, pi/2, pi/2, 0, 0, 0];
 % To leave the z-axis placement up to the algorithm, use NaN
 % z_mod = [0   0   0   0   0   0   0];
 % z_mod = [NaN   NaN   NaN   NaN   NaN   NaN   NaN];
-% solution from placementA:
-z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
+z_mod = [NaN  NaN   NaN   -0.3   NaN    -0.1  NaN];
+% solution when input doesn't specify any values (Algorithm 8 chooses all):
+% z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
 
 
 
@@ -172,11 +171,13 @@ end
 
 % Display the z_mod calculated by placementA
 if strcmp(jointselect, 'placementA') == 1
-    z_mod(N) = 0;
+    delta_z_solution = NaN(1,N+1);
     for i = 1:N+1
-        z_mod(i) = TransformStruct(i).delta_z;
+        delta_z_solution(i) = TransformStruct(i).delta_z;
     end
-    disp("Solution found by placementA:")
+    disp("Input z specifications:")
     disp(['z_mod = [' num2str(z_mod) ']']) ;
+    disp("Output z positions:")
+    disp(['delta_z_solution = [' num2str(delta_z_solution) ']']) ;
 end
 
