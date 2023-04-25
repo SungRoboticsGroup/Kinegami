@@ -74,15 +74,12 @@ if isnan(DataStruct(index-1).delta_z)
     % Output optimal value for delta
     delta_opt = fmincon(obj, delta0, A, B, Aeq, Beq, LB, UB, nonlincon);
     
+    % negative sign because zzz is defined as -DataStruct(index-1).zaxis;
     DataStruct(index-1).delta_z = -delta_opt;
 end
 
 % Given delta_opt, determine new value for DataStruct(index-1).oinew
-DataStruct(index-1).oinew = DataStruct(index-1).oi + zzz*delta_opt;
-
-% Store the solution displacement along joint z axis:
-% negative sign because zzz is defined as -DataStruct(index-1).zaxis;
-DataStruct(index-1).delta_z = -delta_opt; 
+DataStruct(index-1).oinew = DataStruct(index-1).oi - zzz * DataStruct(index-1).delta_z;
 
 % hold on
 % quiver3(DataStruct(index-1).oinew(1), DataStruct(index-1).oinew(2), ...

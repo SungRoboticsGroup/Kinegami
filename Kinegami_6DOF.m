@@ -97,9 +97,9 @@ theta_mod = [0, 0, pi/2, pi/2, 0, 0, 0];
 % Specify the z-axis modifications
 % To leave the z-axis placement up to the algorithm, use NaN
 % z_mod = [0   0   0   0   0   0   0];
-z_mod = [NaN   NaN   NaN   NaN   NaN   NaN   NaN];
+% z_mod = [NaN   NaN   NaN   NaN   NaN   NaN   NaN];
 % solution from placementA:
-% z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
+z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
 
 
 
