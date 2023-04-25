@@ -49,7 +49,7 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
 % Daniel Feshbach <feshbach@seas.upenn.edu>
-% Last Edited 4/13/2023
+% Last Edited 4/25/2023
 %
 % Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
@@ -630,6 +630,18 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
     if strcmp(DXF, 'on') == 1
         filename = 'KinegamiTest.dxf';
         GenerateDXF(filename, DataNet)
+    end
+
+    % Display the delta_z calculated by placementA
+    if strcmp(jointselect, 'placementA') == 1
+        delta_z_solution = NaN(1,N+1);
+        for i = 1:N+1
+            delta_z_solution(i) = TransformStruct(i).delta_z;
+        end
+        disp("Input z specifications:")
+        disp(['z_mod = [' num2str(z_mod) ']']) ;
+        disp("Output z positions:")
+        disp(['delta_z_solution = [' num2str(delta_z_solution) ']']) ;
     end
     
 end

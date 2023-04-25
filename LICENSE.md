@@ -2,12 +2,12 @@ COPYRIGHT AND PERMISSION NOTICE
 
 Penn Software Kinegami
 
-Copyright (C) 2022 The Trustees of the University of Pennsylvania
+Copyright (C) 2023 The Trustees of the University of Pennsylvania
 
 All rights reserved.
 
 
-The Trustees of the University of Pennsylvania ("Penn") and Cynthia Sung, Wei-Hsi Chen, Lucien Peach, Woohyeok Yang the developers ("Developer") of Penn Software Kinegami ("Software") give the recipient ("Recipient") and Recipient's Institution ("Institution") permission to use, copy, and modify the software in source and binary forms, with or without modification for non-profit research purposes only provided that the following conditions are met:
+The Trustees of the University of Pennsylvania ("Penn") and Cynthia Sung, Wei-Hsi Chen, Lucien Peach, Woohyeok Yang, Daniel Feshbach the developers ("Developer") of Penn Software Kinegami ("Software") give the recipient ("Recipient") and Recipient's Institution ("Institution") permission to use, copy, and modify the software in source and binary forms, with or without modification for non-profit research purposes only provided that the following conditions are met:
 
 1) All copies of Software in binary form and/or source code, related documentation and/or other materials provided with the Software must reproduce and retain the above copyright notice, this list of conditions and the following disclaimer.
 

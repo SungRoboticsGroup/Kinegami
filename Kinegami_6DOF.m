@@ -3,9 +3,10 @@
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last Edited 04/05/2023
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last Edited 04/25/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -97,8 +98,8 @@ theta_mod = [0, 0, pi/2, pi/2, 0, 0, 0];
 % z_mod = [0   0   0   0   0   0   0];
 % z_mod = [NaN   NaN   NaN   NaN   NaN   NaN   NaN];
 z_mod = [NaN  NaN   NaN   -0.3   NaN    -0.1  NaN];
-% solution when input doesn't specify any values (Algorithm 8 chooses all):
-% z_mod = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
+% Solution found when z_mod is all NaN
+% delta_z_solution = [-0.2809   -0.3434   -0.2621   -0.1833   -0.1232    0.0517  0];
 
 
 
@@ -168,16 +169,3 @@ end
 [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, nsides, JointStruct, ...
     elbow_tuck, triple, theta_mod, z_mod, fingertip, TransformStruct, ...
     DXF, split, segmentation, plotoption, jointselect, tubeinit);
-
-% Display the z_mod calculated by placementA
-if strcmp(jointselect, 'placementA') == 1
-    delta_z_solution = NaN(1,N+1);
-    for i = 1:N+1
-        delta_z_solution(i) = TransformStruct(i).delta_z;
-    end
-    disp("Input z specifications:")
-    disp(['z_mod = [' num2str(z_mod) ']']) ;
-    disp("Output z positions:")
-    disp(['delta_z_solution = [' num2str(delta_z_solution) ']']) ;
-end
-

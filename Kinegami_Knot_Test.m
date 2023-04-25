@@ -3,10 +3,12 @@
 % for simplicity. 
 
 % Authors: 
+% Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last Edited 04/05/2023
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last Edited 04/25/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -23,9 +25,7 @@ addpath(genpath(fileparts(mfilename('fullpath'))));
 % For the general method, use JointPlacementA.m ('placementA'); 
 % To guarantee no self-intersection, use JointPlacementB.m ('placementB');
 % To locate the joints manually, use SelfAssign.m ('selfassign')
-% To manually specify only the free DOFs, use
-% JointPlacementConstrainedManual.m ('constrainedManual')
-jointselect = 'constrainedManual';
+jointselect = 'placementA';
 
 % Determines whether the user wishes their elbow fittings to have visible
 % tucks ('on' - recommended) or appear with only the lower outlines ('off')
@@ -80,12 +80,12 @@ Q0 = [0, 0, 0];
 theta_mod = [0, 0, 0];
 Nz = [1, 1, 1]; 
 
-% For constrainedManual: specify the z-axis modifications
-% (placementA and placementB choose these values automatically, 
-% and selfassign manually assigns the whole frame.)
+% Specify the z-axis modifications
+% To leave the z-axis placement up to the algorithm, use NaN
 % z_mod = [0, 0, 0];
-% solution from placementA:
-z_mod = [9.0267e-10    0.011716           0];
+z_mod = [NaN, NaN, NaN];
+% Solution found when z_mod is all NaN
+% delta_z_solution = [9.0267e-10    0.011716           0];
 
 % % Universal joint
 % n = 4;
@@ -165,13 +165,3 @@ end
 [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, nsides, JointStruct, ...
     elbow_tuck, triple, theta_mod, z_mod, fingertip, TransformStruct, ...
     DXF, split, segmentation, plotoption, jointselect, tubeinit);
-
-% Display the z_mod calculated by placementA
-if strcmp(jointselect, 'placementA') == 1
-    z_mod(N+1) = 0;
-    for i = 1:N
-        z_mod(i) = TransformStruct(i).delta_z;
-    end
-    disp("Solution found by placementA:")
-    disp(['z_mod = [' num2str(z_mod) ']']) ;
-end
