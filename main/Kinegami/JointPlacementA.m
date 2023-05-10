@@ -33,52 +33,49 @@ function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod,
 % Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
-
-for i = (N+1):-1:1
-    
-    % The i index refers to the lower right value for regular and upper
-    % left value for inverse
-    TransformStruct(i).T = HomogeneousTransform(i, D);
-    TransformStruct(i).inverse = InverseHomogeneousTransform(i, D);
-    
-    % This will be used to find the value of 0{T}N+1
-    if i == (N+1)
-        TransformStruct(N+1).net = TransformStruct(i).T;
-    else
-        TransformStruct(N+1).net = TransformStruct(i).T * TransformStruct(N+1).net;
-    end
-    
-end
-
-% Extract O(N+1) and Oc(N+1) from NetTransform (4x4 matrix)
-Ox = TransformStruct(N+1).net(1:3, 1);
-Oy = TransformStruct(N+1).net(1:3, 2);
-Oz = TransformStruct(N+1).net(1:3, 3);
-Oc = TransformStruct(N+1).net(1:3, 4);
-
-% O and Oc, initial axis of translation
-TransformStruct(N+1).O = [Ox, Oy, Oz, Oc];
-
-if strcmp(fingertip, 'z')
-    TransformStruct(N+1).Oc = [Oz, Ox, Oy, Oc];
-elseif strcmp(fingertip, 'x')
-    TransformStruct(N+1).Oc = [Ox, Oy, Oz, Oc];
-elseif strcmp(fingertip, 'y')
-    TransformStruct(N+1).Oc = [Oy, Oz, Ox, Oc];
-end
-
-TransformStruct(N+1).zaxis = Oz.';
-TransformStruct(N+1).xaxis = Ox.';
-
-% Define r and oi for initial sphere (recall .oi etc. is row)
-TransformStruct(N+1).oi = Oc.';
-TransformStruct(N+1).rs = r;
-
 % Assume value for beta to be constant
 beta = pi/4; % [rad]
 
-for i = 1:N+1
+for i = 1:(N+1)
     
+    % The i index refers to the lower right value for regular and upper
+    TransformStruct(i).T = HomogeneousTransformDH_KD(i, D);
+    if i == 1
+        TransformStruct(1).net = TransformStruct(1).T;
+    else
+        TransformStruct(i).net = TransformStruct(i-1).net * TransformStruct(i).T;
+    end
+    
+    % Extract Oi from TransformStruct(i).net
+    Ox = TransformStruct(i).net(1:3, 1);
+    Oy = TransformStruct(i).net(1:3, 2);
+    Oz = TransformStruct(i).net(1:3, 3);
+    Oc = TransformStruct(i).net(1:3, 4);
+
+    % O Computation
+    TransformStruct(i).O = [Ox, Oy, Oz, Oc];
+    
+    if i == N+1
+        if strcmp(fingertip, 'z')
+            TransformStruct(N+1).Oc = [Oz, Ox, Oy, Oc];
+        elseif strcmp(fingertip, 'x')
+            TransformStruct(N+1).Oc = [Ox, Oy, Oz, Oc];
+        elseif strcmp(fingertip, 'y')
+            TransformStruct(N+1).Oc = [Oy, Oz, Ox, Oc];
+        end
+        TransformStruct(N+1).rs = r; % might not be used?
+    end
+
+    % Translation Axis
+    TransformStruct(i).zglobal = Oz.';
+    
+    % X Axis
+    TransformStruct(i).xglobal = Ox.';
+    
+    % Define r and oi for spheres
+    TransformStruct(i).oi = Oc.';
+
+
     % Assign r fields for sphere calculations
     
     % If revolute
@@ -109,33 +106,6 @@ for i = 1:N+1
     
 end
 
-% Loop through homogeneous transforms
-for i = N:-1:1
-    
-    % Multiply inverse matrix and standard homogeneous to compute net
-    TransformStruct(i).net = TransformStruct(i+1).net * ...
-        TransformStruct(i+1).inverse;
-    
-    % Extract Oi from TransformStruct(i).net
-    Ox = TransformStruct(i).net(1:3, 1);
-    Oy = TransformStruct(i).net(1:3, 2);
-    Oz = TransformStruct(i).net(1:3, 3);
-    Oc = TransformStruct(i).net(1:3, 4);
-
-    % O Computation
-    TransformStruct(i).O = [Ox, Oy, Oz, Oc];
-    
-    % Translation Axis
-    TransformStruct(i).zaxis = Oz.';
-    
-    % X Axis
-    TransformStruct(i).xaxis = Ox.';
-    
-    % Define r and oi for spheres
-    TransformStruct(i).oi = Oc.';
-
-end
-
 black = [0,0,0];
 red = [0.6350, 0.0780, 0.1840];
 orange = [0.8500, 0.3250, 0.0980];
@@ -164,18 +134,18 @@ for i = 1:N+1
         z_scale = 10;
 
         quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
-            TransformStruct(i).oi(3), z_scale*TransformStruct(i).zaxis(1), ...
-            z_scale*TransformStruct(i).zaxis(2), z_scale*TransformStruct(i).zaxis(3), ...
+            TransformStruct(i).oi(3), z_scale*TransformStruct(i).zglobal(1), ...
+            z_scale*TransformStruct(i).zglobal(2), z_scale*TransformStruct(i).zglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 0.8*colorvector(i, :));
 
         % quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
-        %     TransformStruct(i).oi(3), -z_scale*TransformStruct(i).zaxis(1), ...
-        %     -z_scale*TransformStruct(i).zaxis(2), -z_scale*TransformStruct(i).zaxis(3), ...
+        %     TransformStruct(i).oi(3), -z_scale*TransformStruct(i).zglobal(1), ...
+        %     -z_scale*TransformStruct(i).zglobal(2), -z_scale*TransformStruct(i).zglobal(3), ...
         %     'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 0.8*colorvector(i, :));
 
         quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
-            TransformStruct(i).oi(3), TransformStruct(i).xaxis(1), ...
-            TransformStruct(i).xaxis(2), TransformStruct(i).xaxis(3), ...
+            TransformStruct(i).oi(3), TransformStruct(i).xglobal(1), ...
+            TransformStruct(i).xglobal(2), TransformStruct(i).xglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 'k');
 
         grid on
@@ -199,7 +169,7 @@ if isnan(TransformStruct(N+1).delta_z)
     TransformStruct(N+1).delta_z = 0;
 end
 TransformStruct(N+1).oinew = TransformStruct(N+1).oi + ...
-    TransformStruct(N+1).delta_z * TransformStruct(N+1).zaxis;
+    TransformStruct(N+1).delta_z * TransformStruct(N+1).zglobal;
 
 [TransformStruct(N+1).demo] = SphericalSampling(TransformStruct(N+1).oinew, ...
     TransformStruct(N+1).rs, 'none', plotoption);
@@ -255,18 +225,18 @@ for i = 1:N+1
         
         % The z axes of the original joint origins, for reference
         quiver3(TransformStruct(i).oi(1), TransformStruct(i).oi(2), ...
-            TransformStruct(i).oi(3), TransformStruct(i).zaxis(1), ...
-            TransformStruct(i).zaxis(2), TransformStruct(i).zaxis(3), ...
+            TransformStruct(i).oi(3), TransformStruct(i).zglobal(1), ...
+            TransformStruct(i).zglobal(2), TransformStruct(i).zglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 3, 'Color', 0.8*colorvector(i, :));        
         
         quiver3(TransformStruct(i).oinew(1), TransformStruct(i).oinew(2), ...
-            TransformStruct(i).oinew(3), TransformStruct(i).zaxis(1), ...
-            TransformStruct(i).zaxis(2), TransformStruct(i).zaxis(3), ...
+            TransformStruct(i).oinew(3), TransformStruct(i).zglobal(1), ...
+            TransformStruct(i).zglobal(2), TransformStruct(i).zglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 0.8*colorvector(i, :));
 
         quiver3(TransformStruct(i).oinew(1), TransformStruct(i).oinew(2), ...
-            TransformStruct(i).oinew(3), TransformStruct(i).xaxis(1), ...
-            TransformStruct(i).xaxis(2), TransformStruct(i).xaxis(3), ...
+            TransformStruct(i).oinew(3), TransformStruct(i).xglobal(1), ...
+            TransformStruct(i).xglobal(2), TransformStruct(i).xglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 'k');
 
         grid on

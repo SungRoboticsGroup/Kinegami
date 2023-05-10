@@ -36,7 +36,7 @@ dist = 4*r + DataStruct(index).rnew + DataStruct(index-1).rs;
 % y_dist = abs(DataStruct(index).oinew(2) - DataStruct(index-1).oi(2));
 % z_dist = abs(DataStruct(index).oi(3) - DataStruct(index-1).oi(3));
 
-zzz = -DataStruct(index-1).zaxis;
+zzz = -DataStruct(index-1).zglobal;
 % zzz = [4,1,1];
 % Choose delta such that norm(DataStruct(index-1).oinew -
 % DataStruct(index).oinew) is minimized but also so that
@@ -74,7 +74,7 @@ if isnan(DataStruct(index-1).delta_z)
     % Output optimal value for delta
     delta_opt = fmincon(obj, delta0, A, B, Aeq, Beq, LB, UB, nonlincon);
     
-    % negative sign because zzz is defined as -DataStruct(index-1).zaxis;
+    % negative sign because zzz is defined as -DataStruct(index-1).zglobal;
     DataStruct(index-1).delta_z = -delta_opt;
 end
 

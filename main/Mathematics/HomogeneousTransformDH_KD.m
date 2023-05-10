@@ -1,10 +1,10 @@
-function [DataStruct] = HomogeneousTransform(index, D)
+function [DataStruct] = HomogeneousTransformDH_KD(index, D)
 % HOMOGENEOUSTRANSFORM - Finds all joint frames given the D-H 
-% specification.
+% specification with the Khalil-Dombre indexing convention
 
 % Inputs:
-%   D           - the D-H parameter table of values: i x [a, alpha, d, 
-%                 theta].
+%   D           - the D-H parameter table of values in the Khalil-Dombre
+%                 indexing convention: i x [a, alpha, d, theta].
 %   index       - ranges from 1 to i, used for identifying and properly 
 %                 placing T into a table of other T values. T indexing is
 %                 based on the upper index of T. For instance, T(i) would

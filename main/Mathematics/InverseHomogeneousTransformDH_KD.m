@@ -1,6 +1,6 @@
-function [DataStruct] = InverseHomogeneousTransform(index, D)
+function [DataStruct] = InverseHomogeneousTransformDH_KD(index, D)
 % INVERSEHOMOGENEOUSTRANSFORM - Finds the inverse transformation matrix 
-% given the D-H specification.
+% given the D-H specification in Khalil-Dombre indexing convention.
 
 % Inputs:
 %   D           - the D-H parameter table of values: i x [a, alpha, d, 
@@ -30,7 +30,7 @@ function [DataStruct] = InverseHomogeneousTransform(index, D)
 
 % for inverse of homog matrix, [RT, -d; 0, 1] instead of [R, d; 0, 1];
 
-DataStruct = HomogeneousTransform(index, D);
+DataStruct = HomogeneousTransformDH_KD(index, D);
 
 DataStruct = inv(DataStruct);
 

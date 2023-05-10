@@ -72,8 +72,8 @@ elseif strcmp(fingertip, 'y')
     TransformStruct(N+1).Oc = [Oy, Oz, Ox, Oc];
 end
 
-TransformStruct(N+1).zaxis = Oz.';
-TransformStruct(N+1).xaxis = Ox.';
+TransformStruct(N+1).zglobal = Oz.';
+TransformStruct(N+1).xglobal = Ox.';
 
 % Define r and oi for initial sphere (recall .oi etc. is row)
 TransformStruct(N+1).oi = Oc.';
@@ -144,10 +144,10 @@ for i = N:-1:1
     TransformStruct(i).O = [Ox, Oy, Oz, Oc];
     
     % Translation Axis
-    TransformStruct(i).zaxis = Oz.';
+    TransformStruct(i).zglobal = Oz.';
     
     % X Axis
-    TransformStruct(i).xaxis = Ox.';
+    TransformStruct(i).xglobal = Ox.';
     
     % Define r and oi for spheres
     TransformStruct(i).oi = Oc.';
@@ -223,11 +223,11 @@ for i = N+1:-1:2
     % For parallel, conflicting case
     % There could be numeric error, so check for "statment < 0.00001"
     % instead of "statement == 0".
-    if abs(dot(TransformStruct(i).normal, TransformStruct(i-1).zaxis)) < 0.00001 && ...
+    if abs(dot(TransformStruct(i).normal, TransformStruct(i-1).zglobal)) < 0.00001 && ...
             planeval < 0
 
         % Assign normal vector
-        TransformStruct(i).normal2 = -TransformStruct(i-1).zaxis.';
+        TransformStruct(i).normal2 = -TransformStruct(i-1).zglobal.';
 
         % Assign new planes
         TransformStruct(i).tangent2(:, 4) = TransformStruct(i).oib.' + ...
@@ -444,13 +444,13 @@ for i = 1:N+1
     % restricted to move
     if strcmp(plotoption, 'on') == 1
         quiver3(TransformStruct(i).Oc(1, 4), TransformStruct(i).Oc(2, 4), ...
-            TransformStruct(i).Oc(3, 4), TransformStruct(i).zaxis(1), ...
-            TransformStruct(i).zaxis(2), TransformStruct(i).zaxis(3), ...
+            TransformStruct(i).Oc(3, 4), TransformStruct(i).zglobal(1), ...
+            TransformStruct(i).zglobal(2), TransformStruct(i).zglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 0.8*colorvector(i, :));
 
         quiver3(TransformStruct(i).Oc(1, 4), TransformStruct(i).Oc(2, 4), ...
-            TransformStruct(i).Oc(3, 4), TransformStruct(i).xaxis(1), ...
-            TransformStruct(i).xaxis(2), TransformStruct(i).xaxis(3), ...
+            TransformStruct(i).Oc(3, 4), TransformStruct(i).xglobal(1), ...
+            TransformStruct(i).xglobal(2), TransformStruct(i).xglobal(3), ...
             'AutoScaleFactor', 0.05, 'Linewidth', 1.1, 'Color', 'k');
 
         grid on
