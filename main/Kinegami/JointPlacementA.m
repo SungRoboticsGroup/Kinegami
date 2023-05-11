@@ -28,9 +28,10 @@ function [TransformStruct] = JointPlacementA(D, r, n, JointStruct, N, theta_mod,
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last Edited 1/25/2023
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last Edited 5/11/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 % Assume value for beta to be constant
@@ -38,8 +39,13 @@ beta = pi/4; % [rad]
 
 for i = 1:(N+1)
     
-    % The i index refers to the lower right value for regular and upper
-    TransformStruct(i).T = HomogeneousTransformDH_KD(i, D);
+    if isfield(JointStruct, 'zAxisRelative')
+        TransformStruct(i).T = HomogeneousTransformOZ( ...
+            JointStruct(i).oRelative, JointStruct(i).zAxisRelative);
+    else
+        TransformStruct(i).T = HomogeneousTransformDH_KD(i, D);
+    end
+    
     if i == 1
         TransformStruct(1).net = TransformStruct(1).T;
     else
