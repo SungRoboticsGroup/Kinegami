@@ -43,8 +43,8 @@ for i = (N+1):-1:1
     
     % The i index refers to the lower right value for regular and upper
     % left value for inverse
-    TransformStruct(i).T = HomogeneousTransform(i, D);
-    TransformStruct(i).inverse = InverseHomogeneousTransform(i, D);
+    TransformStruct(i).T = HomogeneousTransformDH_KD(i, D);
+    TransformStruct(i).inverse = InverseHomogeneousTransformDH_KD(i, D);
     
     % This will be used to find the value of 0{T}N+1
     if i == (N+1)
