@@ -134,22 +134,23 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
     % Populate proximal and distal potential frames prior to looping
     index = 0;
     for i = 1:N+1
-                   
-        index = index + 1;
-
-        % Establish adjustment parameters
-        TransformStruct(index).adjust = TransformStruct(index).rs * ...
-            TransformStruct(index).Oc(:, 1);
-
-        % Create new fields for editing
-        JointStruct(i).Op = TransformStruct(index).Oc;
-        JointStruct(i).Od = TransformStruct(index).Oc;
-
-        % Edit new fields to create proximal and distal frames
-        JointStruct(i).Op(:, 4) = JointStruct(i).Op(:, 4) ...
-            - TransformStruct(index).adjust;
-        JointStruct(i).Od(:, 4) = JointStruct(i).Od(:, 4) ...
-            + TransformStruct(index).adjust;           
+        if strcmp(JointStruct(i).type, 'W') ~= 1           
+            index = index + 1;
+    
+            % Establish adjustment parameters
+            TransformStruct(index).adjust = TransformStruct(index).rs * ...
+                TransformStruct(index).Oc(:, 1);
+    
+            % Create new fields for editing
+            JointStruct(i).Op = TransformStruct(index).Oc;
+            JointStruct(i).Od = TransformStruct(index).Oc;
+    
+            % Edit new fields to create proximal and distal frames
+            JointStruct(i).Op(:, 4) = JointStruct(i).Op(:, 4) ...
+                - TransformStruct(index).adjust;
+            JointStruct(i).Od(:, 4) = JointStruct(i).Od(:, 4) ...
+                + TransformStruct(index).adjust;
+        end
     end
     
     % infostruct population and execution of DubinsTube()
@@ -421,15 +422,16 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
     
     index = 0;
     for i = 1:N+1
-            
-        index = index + 1;
-
-        % Run SphericalSampling on each joint
-        [TransformStruct(index).dubinsplot, handle] = SphericalSampling(TransformStruct(index).Oc(:, 4), ...
-            TransformStruct(index).rs, colorvector(index, :), plotoption);   
-
-        % Turn off legend for appearance
-        handle.Annotation.LegendInformation.IconDisplayStyle = 'off'; 
+        if strcmp(JointStruct(i).type, 'W') ~= 1    
+            index = index + 1;
+    
+            % Run SphericalSampling on each joint
+            [TransformStruct(index).dubinsplot, handle] = SphericalSampling(TransformStruct(index).Oc(:, 4), ...
+                TransformStruct(index).rs, colorvector(index, :), plotoption);   
+    
+            % Turn off legend for appearance
+            handle.Annotation.LegendInformation.IconDisplayStyle = 'off';
+        end
     end
     
     % Plot Settings
