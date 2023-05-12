@@ -32,20 +32,24 @@ function [TransformStruct, JointStructNew, Nnew] = JointPlacementB(D, r, n, Join
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last Edited 1/25/2023
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last Edited 5/12/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
 % Does this process remain for JointPlacement? Unsure but kept for now.
 for i = (N+1):-1:1
     
-    % The i index refers to the lower right value for regular and upper
-    % left value for inverse
-    TransformStruct(i).T = HomogeneousTransformDH_KD(i, D);
-    TransformStruct(i).inverse = InverseHomogeneousTransformDH_KD(i, D);
-    
+    if isfield(JointStruct, 'zAxisRelative')
+        TransformStruct(i).T = HomogeneousTransformOZ( ...
+            JointStruct(i).oRelative, JointStruct(i).zAxisRelative);
+        TransformStruct(i).inverse = inv(TransformStruct(i).T);
+    else
+        TransformStruct(i).T = HomogeneousTransformDH_KD(i, D);
+        TransformStruct(i).inverse = InverseHomogeneousTransformDH_KD(i, D);
+    end
     % This will be used to find the value of 0{T}N+1
     if i == (N+1)
         TransformStruct(N+1).net = TransformStruct(i).T;

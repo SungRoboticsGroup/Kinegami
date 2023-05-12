@@ -49,7 +49,7 @@ function [infostruct, TransformStruct, DataNet, JointStruct] = Kinegami(D, r, n,
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
 % Daniel Feshbach <feshbach@seas.upenn.edu>
-% Last Edited 4/25/2023
+% Last Edited 5/12/2023
 %
 % Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
