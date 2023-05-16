@@ -21,9 +21,10 @@ function [JointStruct] = DubinsPlot(JointStruct, infostruct, index, i)
 % Authors: 
 % Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last edited 7/27/2021
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last edited 5/16/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -137,7 +138,7 @@ for j = 1:50
         infostruct(index).r * (eye(3) - RotationalMatrix(wp, dAng1*j)) * o2c1];
 end
 
-if infostruct(index+3).theta < -0.001
+if infostruct(index+3).theta < -0.01
     dAng2 = (2*pi + infostruct(index+3).theta)/50;
 else
     dAng2 = infostruct(index+3).theta/50;
