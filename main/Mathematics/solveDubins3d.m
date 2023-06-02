@@ -1,7 +1,9 @@
-function [tmin, theta1min, theta2min] = solveDubins3d(r, Od, Op)
+function [tmin, theta1min, theta2min] = dubinsCSC_HG10(r, Od, Op)
 % SOLVEDUBINS3D - Find the CSC Dubins path from frame Op to Od.
 % Outputs row vector and two radian values. Ensure that Od and Op are
-% normalized prior to entry. 
+% normalized prior to entry. Only guaranteed to work if op and od are
+% at least 4r apart. Implementation of S. Hota and D. Ghose, 
+% "Optimal Geometrical Path in 3D with Curvature Constraint", IROS 2010.
 
 % Inputs:
 %   r           - desired radius of folded origami linkage.
@@ -29,13 +31,19 @@ function [tmin, theta1min, theta2min] = solveDubins3d(r, Od, Op)
 % input params
 od = Od(:, 4).';
 ad = Od(:, 1).';
+bd = Od(:, 2).';
 
 op = Op(:, 4).';
 ap = Op(:, 1).';
+bp = Op(:, 2).';
 
 % normalize 'velocity vectors'
 ad = ad / norm(ad);
 ap = ap / norm(ap);
+
+% normalize rotational reference vectors
+bd = bd / norm(bd);
+bp = bp / norm(bp);
 
 % solve for optimal t = [tx, ty, tz]
 T0 = od-op+randn(size(od));
@@ -150,6 +158,17 @@ plotCirclePath(op, od, Cp4, Pp4, Cd4, Pd4, ap, ad, 'b', 'r')
 
 axis equal
 
+AllPathSpecs = zeros(4,4);
+[th11,g11,th21,g21] = pathSpecs(Cd1, Pd1, Cp1, Pp1);
+AllPathSpecs(1,:) = [th11,g11,th21,g21];
+[th12,g12,th22,g22] = pathSpecs(Cd2, Pd2, Cp2, Pp2);
+AllPathSpecs(2,:) = [th12,g12,th22,g22];
+[th13,g13,th23,g23] = pathSpecs(Cd3, Pd3, Cp3, Pp3);
+AllPathSpecs(3,:) = [th13,g13,th23,g23];
+[th14,g14,th24,g24] = pathSpecs(Cd4, Pd4, Cp4, Pp4);
+AllPathSpecs(4,:) = [th14,g14,th24,g24];
+AllPathSpecs
+
 % Functions
 % ---------------------------------------------------------------------
 
@@ -215,6 +234,19 @@ axis equal
         yd = -cross(Tunit, cross(Tunit, ad));
         Cd = od + r * wd / norm(wd); % center of ending circle
         Pd = Cd - r * yd / norm(yd); % point of entering ending circle
+    end
+
+    function [theta1, gamma1, theta2, gamma2] = pathSpecs(Cd, Pd, Cp, Pp)
+        W1 = Cp - op;
+        w1 = W1/norm(W1);
+        W2 = Cd - od;
+        w2 = W2/norm(W2);
+        T = Pd - Pp;
+        Tunit = T / norm(T);
+        theta1 = SignedAngle(ap, Tunit, cross(ap, w1));
+        gamma1 = SignedAngle(bp, w1, ap);
+        theta2 = SignedAngle(Tunit, ad, cross(ad, w2));
+        gamma2 = SignedAngle(bd, w2, ad);
     end
 
 % 

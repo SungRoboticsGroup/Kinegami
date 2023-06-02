@@ -13,16 +13,20 @@ function [theta] = SignedAngle(a, b, n)
 
 % Authors: 
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Last edited 8/6/2021
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Last edited 5/22/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
 % Make sure all vectors are normalised
 a = a/norm(a);
 b = b/norm(b);
-n = n/norm(n);
+if norm(n)~=0
+    n = n/norm(n);
+end
+
 
 % find the signed angle
 theta = atan2(dot(cross(a,b),n),dot(a,b));
