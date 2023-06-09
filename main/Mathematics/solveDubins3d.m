@@ -1,8 +1,8 @@
-function [tmin, theta1min, theta2min] = dubinsCSC_HG10(r, Od, Op)
+function [TdirMin, TmagMin, theta1min, theta2min] = solveDubins3d(r, Od, Op)
 % SOLVEDUBINS3D - Find the CSC Dubins path from frame Op to Od.
 % Outputs row vector and two radian values. Ensure that Od and Op are
 % normalized prior to entry. Only guaranteed to work if op and od are
-% at least 4r apart. Implementation of S. Hota and D. Ghose, 
+% at least 4r apart. Based on S. Hota and D. Ghose, 
 % "Optimal Geometrical Path in 3D with Curvature Constraint", IROS 2010.
 
 % Inputs:
@@ -11,8 +11,10 @@ function [tmin, theta1min, theta2min] = dubinsCSC_HG10(r, Od, Op)
 %   Op          - proximal, or initial, frame of dubins pathing.
 
 % Outputs:
-%   tmin        - row vector associated with the shortest path for Dubins
-%                 path linkage.
+%   TdirMin     - unit direction vector of the S part of the shortest CSC 
+%                 path for Dubins linkage. If the S part is empty, this
+%                 represents the common tangent connecting the circles.
+%   TmagMin     - magnitude of the S part of the shortest CSC path.
 %   theta1min   - theta value (in radians) for use in RotationalMatrix.m,
 %                 for utility in determining rotational matrix around wp.
 %   theta2min   - theta value (in radians) for use in RotationalMatrix.m,
@@ -22,9 +24,10 @@ function [tmin, theta1min, theta2min] = dubinsCSC_HG10(r, Od, Op)
 % Cynthia Sung <crsung@seas.upenn.edu>
 % Lucien Peach <peach@seas.upenn.edu>
 % Wei-Hsi Chen <weicc@seas.upenn.edu>
-% Lasted edited 7/27/2021
+% Daniel Feshbach <feshbach@seas.upenn.edu>
+% Lasted edited 6/5/2023
 %
-% Copyright (C) 2022 The Trustees of the University of Pennsylvania. 
+% Copyright (C) 2023 The Trustees of the University of Pennsylvania. 
 % All rights reserved. Please refer to LICENSE.md for detail.
 
 
@@ -45,91 +48,117 @@ ap = ap / norm(ap);
 bd = bd / norm(bd);
 bp = bp / norm(bp);
 
+
 % solve for optimal t = [tx, ty, tz]
-T0 = od-op+randn(size(od));
+T0 = od - op + r*ap; % randn(size(od));
+if norm(T0)==0
+    T0 = r*ap;
+end
+% 
+% Initial value for Direction and Magnitude of T
+TdirectionMagnitude0 = ones(1, 4);
+TdirectionMagnitude0(1, 1:3) = T0 / norm(T0);
+TdirectionMagnitude0(1, 4) = norm(T0);
 
 % Initialize vectors for error and solutions
-Tsol = zeros(4, 3);
-Terror = zeros(4, 3);
+TdirectionMagnitudeSolutions = zeros(4, 4);
+
 
 % provides individual solutions 
-Tsol(1, :) = fsolve(@dubinspath1, T0); % + ... +
-Tsol(2, :) = fsolve(@dubinspath2, T0); % - ... -
-Tsol(3, :) = fsolve(@dubinspath3, T0); % + ... -
-Tsol(4, :) = fsolve(@dubinspath4, T0); % - ... +
+TdirectionMagnitudeSolutions(1, :) = fsolve(@dubinspath1, TdirectionMagnitude0); % + ... +
+TdirectionMagnitudeSolutions(2, :) = fsolve(@dubinspath2, TdirectionMagnitude0); % - ... -
+TdirectionMagnitudeSolutions(3, :) = fsolve(@dubinspath3, TdirectionMagnitude0); % + ... -
+TdirectionMagnitudeSolutions(4, :) = fsolve(@dubinspath4, TdirectionMagnitude0); % - ... +
+
+% Absolutize Tmag
+TdirectionMagnitudeSolutions(:,4) = abs(TdirectionMagnitudeSolutions(:,4));
+
+% double check the error is low
+SolutionError = zeros(4, 4);
+SolutionError(1, :) = dubinspath1(TdirectionMagnitudeSolutions(1, :));
+SolutionError(2, :) = dubinspath2(TdirectionMagnitudeSolutions(2, :));
+SolutionError(3, :) = dubinspath3(TdirectionMagnitudeSolutions(3, :));
+SolutionError(4, :) = dubinspath4(TdirectionMagnitudeSolutions(4, :));
+ValidPath = vecnorm(SolutionError') < 0.0001; %Threshold needs tuning?
+
+% Display solutions and error
+disp(TdirectionMagnitudeSolutions)
+disp(SolutionError)
 
 thetamatrix = zeros(4, 2);
 ds = zeros(4, 1);
 T_hat = zeros(4, 3);
 
-for i = 1:4
-    
-    T_normalized = norm(Tsol(i, :));
-    T_hat(i, :) = Tsol(i, :)/T_normalized;
-    
-% Find angle using arccos, the range of the output angle is (0, pi)   
-%     thetamatrix(i, 1) = acos(dot(ap, T_hat(i, :)));
-%     thetamatrix(i, 2) = acos(dot(ad, T_hat(i, :)));
+minds = Inf;
+indexds = -1;
 
-% Find angle using atan2, the range of the output angle is (-pi, pi)   
-%     thetamatrix(i, 1) = atan2(norm(cross(ap, T_hat(i, :))),dot(ap, T_hat(i, :)));
-%     thetamatrix(i, 2) = atan2(norm(cross(T_hat(i, :), ad)),dot(T_hat(i, :), ad));
-    
+for i = 1:4
+
+    Tdir = TdirectionMagnitudeSolutions(i, 1:3);
+    Tmag = TdirectionMagnitudeSolutions(i, 4);
+    T_hat(i, :) = Tdir / norm(Tdir);
+    T_found = Tmag * T_hat(i, :);
+
     thetamatrix(i, 1) = SignedAngle(ap, T_hat(i, :), cross(ap, T_hat(i, :)));
-%     thetamatrix(i, 2) = SignedAngle(T_hat(i, :), ad, cross(T_hat(i, :), ad));
-    
+
     % find the point om after a C + S
     wp = cross(ap, T_hat(i, :));
-    wp = wp/norm(wp);
-    o2c1 = -cross(ap, wp)';
-    o2c1 = o2c1/norm(o2c1);
-    om = op' + r*(eye(3) - RotationalMatrix(wp, thetamatrix(i, 1)))* o2c1 + Tsol(i, :)';
+    if ap == T_hat(i, :)
+        % No turning in first segment
+        om = op' + T_found';
+    else
+        % rotate ap about the circle, then move forward by T_found
+        wp = wp/norm(wp);
+        o2c1 = -cross(ap, wp)';
+        o2c1 = o2c1/norm(o2c1);
+        om = op' + r*(eye(3) - RotationalMatrix(wp, thetamatrix(i, 1)))* o2c1 + T_found';
+    end
     % find the vector from om to od, create a normal vector as the axis of
     % rotation
-    om2od = od' - om;
-    ntemp = cross(T_hat(i, :), om2od);
+    if ValidPath(i)
+        om2od = od' - om;
+        ntemp = cross(T_hat(i, :), om2od);
 
-    thetamatrix(i, 2) = SignedAngle(T_hat(i, :), ad, ntemp);
-    
-    
-    ds(i) = r*abs(thetamatrix(i, 1)) + T_normalized + r*abs(thetamatrix(i, 2));
-    
+        thetamatrix(i, 2) = SignedAngle(T_hat(i, :), ad, ntemp);
+
+        ds(i) = r*abs(thetamatrix(i, 1)) + Tmag + r*abs(thetamatrix(i, 2));
+        if ds(i) < minds
+            minds = ds(i);
+            indexds = i;
+        end
+    else
+        ds(i) = Inf;
+    end
+
 end
-
-[minds, indexds] = min(ds);
 
 disp(minds);
 
 % Output minimum Tunittor as well as minimum theta1 and theta2 values
-tmin = Tsol(indexds, :);
+TdirMin = TdirectionMagnitudeSolutions(indexds, 1:3);
+TmagMin = TdirectionMagnitudeSolutions(indexds, 4);
 theta1min = thetamatrix(indexds, 1);
 theta2min = thetamatrix(indexds, 2);
 
-% double check the error is low
-Terror(1, :) = dubinspath1(Tsol(1, :));
-Terror(2, :) = dubinspath2(Tsol(2, :));
-Terror(3, :) = dubinspath3(Tsol(3, :));
-Terror(4, :) = dubinspath4(Tsol(4, :));
-
-% Display solutions and error
-disp(Tsol)
-disp(Terror)
+disp(thetamatrix)
 
 % Plotting
 % --------------------------------------------------------------------
 
 % decompose path in relevant points for plotting
-[Cd1, Pd1, Cp1, Pp1] = decomposePath1(Tsol(1,:));
+[Cd1, Pd1, Cp1, Pp1] = decomposePath1(TdirectionMagnitudeSolutions(1,:));
+
 
 % plotting
 hold on
 subplot(2, 2, 1)
-plotCirclePath(op, od, Cp1, Pp1, Cd1, Pd1, ap, ad, 'b', 'r');
+plotCirclePath(op, od, Cp1, Pp1, Cd1, Pd1, ap, ad, 'b', 'r')
 
 axis equal
 
 % decompose path in relevant points for plotting
-[Cd2, Pd2, Cp2, Pp2] = decomposePath2(Tsol(2,:));
+[Cd2, Pd2, Cp2, Pp2] = decomposePath2(TdirectionMagnitudeSolutions(2,:));
+
 
 % plotting
 hold on
@@ -139,7 +168,8 @@ plotCirclePath(op, od, Cp2, Pp2, Cd2, Pd2, ap, ad, 'b', 'r')
 axis equal
 
 % decompose path in relevant points for plotting
-[Cd3, Pd3, Cp3, Pp3] = decomposePath3(Tsol(3,:));
+[Cd3, Pd3, Cp3, Pp3] = decomposePath3(TdirectionMagnitudeSolutions(3,:));
+
 
 % plotting
 hold on
@@ -149,7 +179,7 @@ plotCirclePath(op, od, Cp3, Pp3, Cd3, Pd3, ap, ad, 'b', 'r')
 axis equal
 
 % decompose path in relevant points for plotting
-[Cd4, Pd4, Cp4, Pp4] = decomposePath4(Tsol(4,:));
+[Cd4, Pd4, Cp4, Pp4] = decomposePath4(TdirectionMagnitudeSolutions(4,:));
 
 % plotting
 hold on
@@ -158,95 +188,99 @@ plotCirclePath(op, od, Cp4, Pp4, Cd4, Pd4, ap, ad, 'b', 'r')
 
 axis equal
 
-AllPathSpecs = zeros(4,4);
-[th11,g11,th21,g21] = pathSpecs(Cd1, Pd1, Cp1, Pp1);
-AllPathSpecs(1,:) = [th11,g11,th21,g21];
-[th12,g12,th22,g22] = pathSpecs(Cd2, Pd2, Cp2, Pp2);
-AllPathSpecs(2,:) = [th12,g12,th22,g22];
-[th13,g13,th23,g23] = pathSpecs(Cd3, Pd3, Cp3, Pp3);
-AllPathSpecs(3,:) = [th13,g13,th23,g23];
-[th14,g14,th24,g24] = pathSpecs(Cd4, Pd4, Cp4, Pp4);
-AllPathSpecs(4,:) = [th14,g14,th24,g24];
-AllPathSpecs
-
 % Functions
 % ---------------------------------------------------------------------
-
-    function [Cd, Pd, Cp, Pp] = decomposePath1(T) % + ... +
-        % find relevant points based on T vector
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
+    
+    % Input: 3d vectors u, v
+    % Output: a unit vector nhat normal to both u and v
+    %         works even if u and v are colinear
+    function nhat = unitNormalToBoth(u, v)
+        % if either input is 0, we don't need 
+        if norm(u) == 0
+            u = [0,0,1];
+        end
+        if norm(v) == 0
+            v = [0,1,0];
+        end
         
-        wp = cross(ap, cross(Tunit, ap));
-        yp = cross(Tunit, cross(Tunit, ap));
+        uxv = cross(u, v);
+        if norm(uxv) == 0
+            ux100 = cross(u, [1,0,0]);
+            if norm(ux100) == 0
+                % this means u,v are colinear with [1,0,0]
+                % so they're normal to [0,1,0]
+                nhat = [0,1,0];
+            else
+                nhat = ux100 / norm(ux100);
+            end
+        else
+            nhat = uxv / norm(uxv);
+        end
+    end
+    
+    function [Cd, Pd, Cp, Pp] = decomposePath1(TdirectionMagnitude) % + ... +
+        % find relevant points based on T vector
+        Tdirection = TdirectionMagnitude(1:3);
+        Tunit = Tdirection / norm(Tdirection);
+
+        wp = cross(ap, unitNormalToBoth(Tunit, ap));
+        yp = cross(Tunit, unitNormalToBoth(Tunit, ap));
+        
         Cp = op + r * wp / norm(wp); % center of starting circle
         Pp = Cp - r * yp / norm(yp); % point of leaving starting circle
         
-        wd = -cross(ad, cross(Tunit, ad));
-        yd = -cross(Tunit, cross(Tunit, ad));
+        wd = -cross(ad, unitNormalToBoth(Tunit, ad));
+        yd = -cross(Tunit, unitNormalToBoth(Tunit, ad));
         Cd = od + r * wd / norm(wd); % center of ending circle
         Pd = Cd - r * yd / norm(yd); % point of entering ending circle
     end
 
-    function [Cd, Pd, Cp, Pp] = decomposePath2(T) % - ... -
+    function [Cd, Pd, Cp, Pp] = decomposePath2(TdirectionMagnitude) % - ... -
         % find relevant points based on T vector
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
-        
-        wp = -cross(ap, cross(Tunit, ap));
-        yp = -cross(Tunit, cross(Tunit, ap));
+        Tdirection = TdirectionMagnitude(1:3);
+        Tunit = Tdirection / norm(Tdirection);
+
+        wp = -cross(ap, unitNormalToBoth(Tunit, ap));
+        yp = -cross(Tunit, unitNormalToBoth(Tunit, ap));
         Cp = op + r * wp / norm(wp); % center of starting circle
         Pp = Cp - r * yp / norm(yp); % point of leaving starting circle
-        
-        wd = cross(ad, cross(Tunit, ad));
-        yd = cross(Tunit, cross(Tunit, ad));
+
+        wd = cross(ad, unitNormalToBoth(Tunit, ad));
+        yd = cross(Tunit, unitNormalToBoth(Tunit, ad));
         Cd = od + r * wd / norm(wd); % center of ending circle
         Pd = Cd - r * yd / norm(yd); % point of entering ending circle
     end
 
-    function [Cd, Pd, Cp, Pp] = decomposePath3(T) % + ... -
+    function [Cd, Pd, Cp, Pp] = decomposePath3(TdirectionMagnitude) % + ... -
         % find relevant points based on T vector
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
-        
-        wp = cross(ap, cross(Tunit, ap));
-        yp = cross(Tunit, cross(Tunit, ap));
+        Tdirection = TdirectionMagnitude(1:3);
+        Tunit = Tdirection / norm(Tdirection);
+
+        wp = cross(ap, unitNormalToBoth(Tunit, ap));
+        yp = cross(Tunit, unitNormalToBoth(Tunit, ap));
         Cp = op + r * wp / norm(wp); % center of starting circle
         Pp = Cp - r * yp / norm(yp); % point of leaving starting circle
-        
-        wd = cross(ad, cross(Tunit, ad));
-        yd = cross(Tunit, cross(Tunit, ad));
+
+        wd = cross(ad, unitNormalToBoth(Tunit, ad));
+        yd = cross(Tunit, unitNormalToBoth(Tunit, ad));
         Cd = od + r * wd / norm(wd); % center of ending circle
         Pd = Cd - r * yd / norm(yd); % point of entering ending circle
     end
 
-    function [Cd, Pd, Cp, Pp] = decomposePath4(T) % - ... +
+    function [Cd, Pd, Cp, Pp] = decomposePath4(TdirectionMagnitude) % - ... +
         % find relevant points based on T vector
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
-        
-        wp = -cross(ap, cross(Tunit, ap));
-        yp = -cross(Tunit, cross(Tunit, ap));
+        Tdirection = TdirectionMagnitude(1:3);
+        Tunit = Tdirection / norm(Tdirection);
+
+        wp = -cross(ap, unitNormalToBoth(Tunit, ap));
+        yp = -cross(Tunit, unitNormalToBoth(Tunit, ap));
         Cp = op + r * wp / norm(wp); % center of starting circle
         Pp = Cp - r * yp / norm(yp); % point of leaving starting circle
-        
-        wd = -cross(ad, cross(Tunit, ad));
-        yd = -cross(Tunit, cross(Tunit, ad));
+
+        wd = -cross(ad, unitNormalToBoth(Tunit, ad));
+        yd = -cross(Tunit, unitNormalToBoth(Tunit, ad));
         Cd = od + r * wd / norm(wd); % center of ending circle
         Pd = Cd - r * yd / norm(yd); % point of entering ending circle
-    end
-
-    function [theta1, gamma1, theta2, gamma2] = pathSpecs(Cd, Pd, Cp, Pp)
-        W1 = Cp - op;
-        w1 = W1/norm(W1);
-        W2 = Cd - od;
-        w2 = W2/norm(W2);
-        T = Pd - Pp;
-        Tunit = T / norm(T);
-        theta1 = SignedAngle(ap, Tunit, cross(ap, w1));
-        gamma1 = SignedAngle(bp, w1, ap);
-        theta2 = SignedAngle(Tunit, ad, cross(ad, w2));
-        gamma2 = SignedAngle(bd, w2, ad);
     end
 
 % 
@@ -257,70 +291,98 @@ AllPathSpecs
 %         [Cd, Pd, Cp, Pp] = decomposePath(T);
 %         err = T - (Pp-Pd);
 %     end
+    
 
-    function err = dubinspath1(T) % + ... +
+    function err = dubinspath1(TdirectionMagnitude) % + ... +
         % equations to solve
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
+        Tdir = TdirectionMagnitude(1:3);
+        Tmag = abs(TdirectionMagnitude(4));
+        Tunit = Tdir / norm(Tdir);
 
-%         theta1 = atan2(norm(cross(ap,Tunit)),dot(ap,Tunit));
-%         theta2 = atan2(norm(cross(Tunit,ad)),dot(Tunit,ad));
         theta1 = SignedAngle(ap, Tunit, cross(ap, Tunit));
         theta2 = SignedAngle(Tunit, ad, cross(Tunit, ad));
 
-        err = T + ...
+        T_err = Tmag * Tunit + ...
             r*(tan(theta1/2) + tan(theta2/2))*Tunit + ...
             r*(tan(theta1/2)*ap + tan(theta2/2)*ad) + ...
             - (od-op);
+
+        err = zeros(1,4);
+        err(1:3) = T_err;
+        err(4) = norm(Tdir) - 1; % we want Tdir == Tunit
     end
 
-    function err = dubinspath2(T) % - ... -
+    function err = dubinspath2(TdirectionMagnitude) % + ... +
         % equations to solve
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
+        Tdir = TdirectionMagnitude(1:3);
+        Tmag = abs(TdirectionMagnitude(4));
+        Tunit = Tdir / norm(Tdir);
 
-%         theta1 = atan2(norm(cross(ap,Tunit)),dot(ap,Tunit));
-%         theta2 = atan2(norm(cross(Tunit,ad)),dot(Tunit,ad));
         theta1 = SignedAngle(ap, Tunit, cross(ap, Tunit));
         theta2 = SignedAngle(Tunit, ad, cross(Tunit, ad));
 
-        err = T - ...
+        T_err = Tmag * Tunit - ...
             r*(tan(theta1/2) + tan(theta2/2))*Tunit - ...
             r*(tan(theta1/2)*ap + tan(theta2/2)*ad) + ...
             - (od-op);
+
+        err = zeros(1,4);
+        err(1:3) = T_err;
+        err(4) = norm(Tdir) - 1; % we want Tdir == Tunit
     end
 
-    function err = dubinspath3(T) % + ... -
+    function err = dubinspath3(TdirectionMagnitude) % + ... +
         % equations to solve
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
+        Tdir = TdirectionMagnitude(1:3);
+        Tmag = abs(TdirectionMagnitude(4));
+        Tunit = Tdir / norm(Tdir);
 
-%         theta1 = atan2(norm(cross(ap,Tunit)),dot(ap,Tunit));
-%         theta2 = atan2(norm(cross(Tunit,ad)),dot(Tunit,ad));
         theta1 = SignedAngle(ap, Tunit, cross(ap, Tunit));
         theta2 = SignedAngle(Tunit, ad, cross(Tunit, ad));
 
-        err = T + ...
+        T_err = Tmag * Tunit + ...
             r*(tan(theta1/2) - tan(theta2/2))*Tunit + ...
             r*(tan(theta1/2)*ap - tan(theta2/2)*ad) + ...
             - (od-op);
+
+        err = zeros(1,4);
+        err(1:3) = T_err;
+        err(4) = norm(Tdir) - 1; % we want Tdir == Tunit
     end
 
-    function err = dubinspath4(T) % - ... +
+    function err = dubinspath4(TdirectionMagnitude) % + ... +
         % equations to solve
-        Tnorm = norm(T);
-        Tunit = T/Tnorm;
+        Tdir = TdirectionMagnitude(1:3);
+        Tmag = abs(TdirectionMagnitude(4));
+        Tunit = Tdir / norm(Tdir);
 
-%         theta1 = atan2(norm(cross(ap,Tunit)),dot(ap,Tunit));
-%         theta2 = atan2(norm(cross(Tunit,ad)),dot(Tunit,ad));
         theta1 = SignedAngle(ap, Tunit, cross(ap, Tunit));
         theta2 = SignedAngle(Tunit, ad, cross(Tunit, ad));
 
-        err = T + ...
+        T_err = Tmag * Tunit + ...
             r*(-tan(theta1/2) + tan(theta2/2))*Tunit + ...
             r*(-tan(theta1/2)*ap + tan(theta2/2)*ad) + ...
             - (od-op);
+
+        err = zeros(1,4);
+        err(1:3) = T_err;
+        err(4) = norm(Tdir) - 1; % we want Tdir == Tunit
     end
+
+   % % For debugging
+   %  function [theta1, gamma1, theta2, gamma2] = pathAngleSpecs(Cd, Pd, Cp, Pp)
+   %      W1 = Cp - op;
+   %      w1 = W1/norm(W1);
+   %      W2 = Cd - od;
+   %      w2 = W2/norm(W2);
+   %      T = Pd - Pp;
+   %      Tunit = T / norm(T);
+   %      theta1 = SignedAngle(ap, Tunit, cross(ap, w1));
+   %      gamma1 = SignedAngle(bp, w1, ap);
+   %      theta2 = SignedAngle(Tunit, ad, cross(ad, w2));
+   %      gamma2 = SignedAngle(bd, w2, ad);
+   %  end
+
 
     % Plotting without overriding
     function plotCirclePath(Op, Od, Cp, Pp, Cd, Pd, ap, ad, col1, col2)
@@ -331,7 +393,8 @@ AllPathSpecs
         plot3(Cp(1),Cp(2),Cp(3), ['*' col2])
         plot3(Pp(1),Pp(2),Pp(3),'*g')
         
-        n = cross(Op-Cp, Pp-Cp);
+        %n = cross(Op-Cp, Pp-Cp);
+        n = cross (Op-Cp, r*ap);
         v = null(n);
         theta = linspace(0,2*pi,50);
         circle_pts = bsxfun(@plus, Cp(:), r * (v(:,1)*cos(theta) + v(:,2)*sin(theta)));
@@ -342,7 +405,8 @@ AllPathSpecs
         plot3(Cd(1),Cd(2),Cd(3), ['*' col1])
         plot3(Pd(1),Pd(2),Pd(3),'*g')
         
-        n = cross(Od-Cd, Pd-Cd);
+        %n = cross(Od-Cd, Pd-Cd);
+        n = cross (Od-Cd, r*ad);
         v = null(n);
         theta = linspace(0,2*pi,50);
         circle_pts = bsxfun(@plus, Cd(:), r * (v(:,1)*cos(theta) + v(:,2)*sin(theta)));

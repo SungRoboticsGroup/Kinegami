@@ -25,7 +25,7 @@ addpath(genpath(fileparts(mfilename('fullpath'))));
 % For the general method, use JointPlacementA.m ('placementA'); 
 % To guarantee no self-intersection, use JointPlacementB.m ('placementB');
 % To locate the joints manually, use SelfAssign.m ('selfassign')
-jointselect = 'placementA';
+jointselect = 'selfassign';
 
 
 % Determines whether the user wishes their elbow fittings to have visible

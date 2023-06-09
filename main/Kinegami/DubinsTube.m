@@ -49,9 +49,10 @@ bd = bd / norm(bd);
 
 % Run solution solver to compare four sets of solutions and find t with the
 % shortest path. output this t and the corresponding theta1 and theta2
-[t, theta1, theta2] = solveDubins3d(r, Od, Op);
+[Tdir, Tmag, theta1, theta2] = solveDubins3d(r, Od, Op);
 
-tunit = t/norm(t);
+tunit = Tdir/norm(Tdir);
+t = Tmag * tunit;
 infostruct(index).t = t;
 infostruct(index).tunit = tunit;
 
