@@ -191,33 +191,7 @@ axis equal
 % Functions
 % ---------------------------------------------------------------------
     
-    % Input: 3d vectors u, v
-    % Output: a unit vector nhat normal to both u and v
-    %         works even if u and v are colinear
-    function nhat = unitNormalToBoth(u, v)
-        % if either input is 0, we don't need 
-        if norm(u) == 0
-            u = [0,0,1];
-        end
-        if norm(v) == 0
-            v = [0,1,0];
-        end
-        
-        uxv = cross(u, v);
-        if norm(uxv) == 0
-            ux100 = cross(u, [1,0,0]);
-            if norm(ux100) == 0
-                % this means u,v are colinear with [1,0,0]
-                % so they're normal to [0,1,0]
-                nhat = [0,1,0];
-            else
-                nhat = ux100 / norm(ux100);
-            end
-        else
-            nhat = uxv / norm(uxv);
-        end
-    end
-    
+   
     function [Cd, Pd, Cp, Pp] = decomposePath1(TdirectionMagnitude) % + ... +
         % find relevant points based on T vector
         Tdirection = TdirectionMagnitude(1:3);

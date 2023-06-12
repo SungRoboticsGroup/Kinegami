@@ -57,11 +57,8 @@ infostruct(index).t = t;
 infostruct(index).tunit = tunit;
 
 % Determine values of wp and wd
-wp = cross(ap, tunit);
-wp = wp / norm(wp);
-
-wd = cross(tunit, ad);
-wd = wd / norm(wd);
+wp = unitNormalToBoth(ap, tunit);
+wd = unitNormalToBoth(tunit, ad);
 
 % Define bm
 [r_mat_p] = RotationalMatrix(wp, theta1);

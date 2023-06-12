@@ -46,7 +46,7 @@ segmentation = 'off';
 % Specify whether intermediary plots should be run ('on'/'off'). 'off' is
 % recommended for faster computational time, 'on' is recommended for more
 % in-depth analysis.
-plotoption = 'on';
+plotoption = 'off';
 
 % Specify whether initial tube plotting (prior to first joint location)
 % should be included. ('on'/'off')
